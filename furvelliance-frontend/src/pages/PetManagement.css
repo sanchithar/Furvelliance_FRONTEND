@@ -1,0 +1,115 @@
+.pet-management,
+.notifications-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 20px;
+}
+
+.management-header,
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto 40px;
+}
+
+.add-btn {
+  width: auto;
+  padding: 12px 24px;
+}
+
+.pet-form {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 600px;
+  margin: 0 auto 40px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.pets-list {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pet-card-detail {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.pet-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.notifications-list {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.notification-item {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.notification-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.notification-item.unread {
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+}
+
+.notification-icon {
+  font-size: 32px;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.alert-type {
+  font-weight: 600;
+  color: #667eea;
+  text-transform: capitalize;
+}
+
+.timestamp {
+  color: #999;
+  font-size: 14px;
+}
+
+.unread-indicator {
+  width: 10px;
+  height: 10px;
+  background: #667eea;
+  border-radius: 50%;
+  position: absolute;
+  top: 25px;
+  right: 20px;
+}
+
+.no-notifications {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
