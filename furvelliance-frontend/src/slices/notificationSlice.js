@@ -8,7 +8,7 @@ export const fetchNotifications = createAsyncThunk("notifications/fetchNotificat
                 Authorization: `Bearer ${localStorage.getItem('token')}`
             }
         });
-        return response.data;
+        return response?.data;
     }catch(err){
         return rejectWithValue(err.response?.data?.error || 'Failed to fetch notifications');
     }
