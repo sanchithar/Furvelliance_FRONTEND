@@ -51,6 +51,15 @@ const Dashboard = () => {
                     </button>
                     <button onClick={() => navigate('/pets')}>Manage pets</button>
                     {/* <button onClick={() => navigate('pricing')}>Subscription</button> */}
+
+                    {user?.role === 'admin' && (
+                        <button
+                            className="admin-btn"
+                            onClick={() => navigate('/admin')}
+                        >
+                            Admin DashBoard
+                        </button>
+                    )}
                     <button onClick={handleLogout}>Logout</button>
                 </div>
             </nav>

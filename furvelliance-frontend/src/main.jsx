@@ -7,9 +7,8 @@ import './index.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
-  </  React.StrictMode>,
+  // Remove StrictMode to prevent component re-mounting issues with WebRTC
+  <Provider store={store}>
+    <App />
+  </Provider>
 )

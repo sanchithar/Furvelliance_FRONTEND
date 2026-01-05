@@ -30,13 +30,27 @@ export const addPet = createAsyncThunk("pets/addPet", async (petData, { rejectWi
 
 export const logActivity = createAsyncThunk("pets/logActivity", async (activityData, { rejectWithValue }) => {
     try{
+        // // Add validation for required fields
+        // if (!activityData.petId || !activityData.type) {
+        //     throw new Error('Missing required activity data');
+        // }
+
         const response = await axios.post('/api/activity', activityData, {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
+            },
+            timeout: 5000, // Add timeout to prevent hanging
         });
         return response.data;
     }catch(err){
+        // console.error('Activity logging failed:', err.response?.data || err.message);
+        
+        // // Don't reject with value for network errors to prevent breaking the UI
+        // if (err.code === 'NETWORK_ERROR' || err.response?.status >= 500) {
+        //     console.warn('Server error, activity will not be logged but app continues');
+        //     return null; // Return null instead of rejecting
+        // }
+        
         return rejectWithValue(err.response?.data?.error || 'Failed to log activity');
     }
 });

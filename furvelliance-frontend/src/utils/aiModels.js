@@ -34,11 +34,28 @@ class AiModelsManager {
             });
             console.log('PoseNet model loaded');
 
-            //Initialize ml5 sound classifier 
-            this.soundClassifier = ml5.soundClassifier('SpeechCommands18w', { 
-                probabilityThreshold: 0.7 
-            });
-            console.log('Sound Classifier loaded');
+            //Initialize ml5 sound classifier - properly wait for it to load
+            try {
+                this.soundClassifier = await new Promise((resolve, reject) => {
+                    const classifier = ml5.soundClassifier('SpeechCommands18w', {
+                        probabilityThreshold: 0.7
+                    }, () => {
+                        console.log('Sound Classifier loaded');
+                        resolve(classifier);
+                    });
+                    
+                    // Add timeout to prevent hanging
+                    setTimeout(() => {
+                        if (!this.soundClassifier) {
+                            console.warn('Sound classifier loading timeout, continuing without it');
+                            resolve(null);
+                        }
+                    }, 10000);
+                });
+            } catch (soundError) {
+                console.warn('Sound classifier failed to load, continuing without it:', soundError);
+                this.soundClassifier = null;
+            }
 
             this.isInitialized = true;
             console.log('All AI models successfully initialized!');
@@ -71,66 +88,69 @@ class AiModelsManager {
             });
             return pose;
         }catch(err){
-            console.error('Error estimating pose:', err);
+            console.error('Error detecting pose:', err);
             return null;
         }
     }
 
     startSoundClassification(callback){
         if(!this.soundClassifier){
-            throw new Error('Sound Classifier not initialized');
+            console.warn('Sound Classifier not available, skipping sound classification');
+            return;
         }
-        this.soundClassifier.classify((error, results) => {
-            if(error){
-                console.error('Sound classification error:', error);
+        
+        try {
+            // Check if the classifier has the classify method
+            if (typeof this.soundClassifier.classify !== 'function') {
+                console.warn('Sound classifier does not have classify method, skipping sound classification');
                 return;
             }
-            callback(results);
-        });
+            
+            this.soundClassifier.classify((error, results) => {
+                if(error){
+                    console.error('Sound classification error:', error);
+                    return;
+                }
+                callback(results);
+            });
+        } catch (error) {
+            console.error('Error starting sound classification:', error);
+        }
     }
 
     stopSoundClassification(){
         // ml5 soundClassifier does not have a built-in stop method, It will stop when the comp unmounts
     }
     
-    analyseActivityAnomaly(detections, historicalData){
-        //simple anomoly
+    analyseActivityAnomaly(currentDetections, historicalData) {
         const anomalies = [];
-        //check for unusual no. of detections
-        if(detections.length > 5){
+        
+        // Check for sudden appearance/disappearance
+        const currentPets = currentDetections.filter(d => ['dog', 'cat'].includes(d.class));
+        const hadPetBefore = historicalData.hadPetBefore;
+        
+        // Pet suddenly appeared (motion detection)
+        if (currentPets.length > 0 && !hadPetBefore) {
             anomalies.push({
-                type: 'high_activity',
+                type: 'motion',
+                alertType: 'motion',
                 confidence: 0.8,
-                description: 'Unusually high activity detected'
+                description: 'Pet movement detected',
+                message: 'Your pet is now active in the monitored area'
             });
         }
-
-        //check for specific pet-related detections
-        const petClasses = ['dog', 'cat', 'bird'];
-        const petDetections = detections.filter(d => petClasses.includes(d.class));
-        if(petDetections.length === 0 && historicalData.hadPetBefore){
+        
+        // Check for unusual number of detections (could indicate unusual behavior)
+        if (currentDetections.length > 5) {
             anomalies.push({
-                type: 'pet_missing',
+                type: 'unusual_behavior',
+                alertType: 'unusual_activity',
                 confidence: 0.7,
-                description: 'Pet not detected in the frame'
+                description: 'High activity detected',
+                message: 'Unusual amount of activity detected in the area'
             });
         }
-
-        ////check for rapid movements 
-        if(historicalData.previousDetections){
-            const movementScore = this.calculateMovement(
-                detections,
-                historicalData.previousDetections
-            );
-            if(movementScore > 0.7){
-                anomalies.push({
-                    type: 'rapid_movement',
-                    confidence: movementScore,
-                    description: 'Rapid movements detected'
-                });
-            }
-        }
-
+        
         return anomalies;
     }
 
@@ -154,34 +174,44 @@ class AiModelsManager {
         return count > 0 ? Math.min(totalMovement / (count * 100), 1) : 0;
     }
 
-    analysePoseForBehaviour(pose){
-        if(!pose || !pose.keypoints) return null;
-
-        //behaviour analysis
-        const keypoints = pose.keypoints;
-        const behaviours = [];
-
-        //if pet is standing ie. nose higher than hips
-        const nose = keypoints.find(kp => kp.part === 'nose');
-        const leftHip = keypoints.find(kp => kp.part === 'leftHip');
-        const rightHip = keypoints.find(kp => kp.part === 'rightHip');
-
-        if(nose && leftHip && rightHip && nose.score > 0.5){
-            const avgHipY = (leftHip.position.y + rightHip.position.y) / 2;
-
-            if(nose.position.y < avgHipY - 50){
-                behaviours.push({
-                    type: 'standing',
-                    confidence: Math.min(nose.score, leftHip.score, rightHip.score)
-                });
-            }else {
-                behaviours.push({
-                    type: 'lying_down',
-                    confidence: Math.min(nose.score, leftHip.score, rightHip.score)
-                });
+    analysePoseForBehaviour(pose) {
+        if (!pose || !pose.keypoints) return null;
+        
+        const keypoints = pose.keypoints.filter(kp => kp.score > 0.5);
+        if (keypoints.length < 3) return null;
+        
+        // Simplified behavior analysis based on pose
+        const headKeypoints = keypoints.filter(kp => 
+            ['nose', 'leftEye', 'rightEye', 'leftEar', 'rightEar'].includes(kp.part)
+        );
+        
+        const bodyKeypoints = keypoints.filter(kp => 
+            ['leftShoulder', 'rightShoulder', 'leftHip', 'rightHip'].includes(kp.part)
+        );
+        
+        // Determine behavior based on pose analysis
+        if (headKeypoints.length >= 2 && bodyKeypoints.length >= 2) {
+            // Simple heuristic: if head is lower than body, might be eating
+            const avgHeadY = headKeypoints.reduce((sum, kp) => sum + kp.position.y, 0) / headKeypoints.length;
+            const avgBodyY = bodyKeypoints.reduce((sum, kp) => sum + kp.position.y, 0) / bodyKeypoints.length;
+            
+            if (avgHeadY > avgBodyY + 20) {
+                return {
+                    type: 'eating',
+                    confidence: pose.score || 0.7,
+                    description: 'Pet appears to be eating'
+                };
             }
-        } 
-        return behaviours.length > 0 ? behaviours[0] : null;
+            
+            // Default to general pose detection
+            return {
+                type: 'pose_detected',
+                confidence: pose.score || 0.6,
+                description: 'Pet pose detected and analyzed'
+            };
+        }
+        
+        return null;
     }
 
     cleanup(){

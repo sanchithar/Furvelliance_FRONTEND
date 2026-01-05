@@ -1,0 +1,72 @@
+.admin-broadcast {
+    min-height: 100vh;
+    background: #f5f5f5;
+    padding: 20px;
+}
+  
+.broadcast-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+  
+.broadcast-form .form-group {
+    margin-bottom: 25px;
+}
+  
+.broadcast-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+  
+.broadcast-form select,
+.broadcast-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+}
+  
+.broadcast-form textarea {
+    resize: vertical;
+}
+  
+.broadcast-form select:focus,
+.broadcast-form textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+  
+.success-message {
+    background: #c8e6c9;
+    color: #2e7d32;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+  
+.btn-broadcast {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+  
+.btn-broadcast:hover {
+    transform: translateY(-2px);
+}
